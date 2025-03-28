@@ -48,15 +48,69 @@ export default function WindSection({
     const turbineHeight = canvas.height * 0.6;
     const turbineSpacing = canvas.width / (turbineCount + 1);
 
-    // Wind particles
-    const particles: { x: number; y: number; speed: number; size: number }[] =
-      [];
-    for (let i = 0; i < 100; i++) {
-      particles.push({
+    // Wind stream properties
+    const streamCount = 12;
+    const streams: {
+      points: { x: number; y: number }[];
+      width: number;
+      speed: number;
+      opacity: number;
+    }[] = [];
+
+    for (let i = 0; i < streamCount; i++) {
+      const startY = Math.random() * canvas.height * 0.7;
+      const points = [];
+      const segmentCount = 8 + Math.floor(Math.random() * 5);
+      const streamWidth = 1 + Math.random() * 0.5;
+
+      for (let j = 0; j < segmentCount; j++) {
+        points.push({
+          x: (canvas.width / segmentCount) * j,
+          y: startY + (Math.random() * 30 - 15),
+        });
+      }
+
+      streams.push({
+        points,
+        width: streamWidth,
+        speed: 1 + Math.random() * 2,
+        opacity: 0.3 + Math.random() * 0.4,
+      });
+    }
+
+    // Leaf properties
+    const leafCount = 15;
+    const leaves: {
+      x: number;
+      y: number;
+      size: number;
+      rotation: number;
+      rotationSpeed: number;
+      speed: number;
+      color: string;
+      type: number;
+    }[] = [];
+
+    const leafColors = [
+      "#8BC34A", // Leaf green
+      "#9CCC65", // Light green
+      "#AED581", // Lighter green
+      "#C5E1A5", // Very light green
+      "#DCEDC8", // Almost white green
+      "#F1C40F", // Yellow
+      "#FFD54F", // Light yellow
+    ];
+
+    for (let i = 0; i < leafCount; i++) {
+      leaves.push({
         x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        speed: Math.random() * 2 + 1,
-        size: Math.random() * 3 + 1,
+        y: Math.random() * canvas.height * 0.7,
+        size: 5 + Math.random() * 5,
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: Math.random() * 0.05 - 0.025,
+        speed: 0.5 + Math.random() * 1.5,
+        color: leafColors[Math.floor(Math.random() * leafColors.length)],
+        type: Math.floor(Math.random() * 3), // 3 different leaf shapes
       });
     }
 
@@ -81,24 +135,152 @@ export default function WindSection({
       ctx.fillStyle = "#8BC34A"; // Leaf green
       ctx.fillRect(0, canvas.height * 0.8, canvas.width, canvas.height * 0.2);
 
-      // Update wind particles
-      ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-      particles.forEach((particle) => {
-        particle.x +=
-          ((particle.speed * conditions.windSpeed) / 15) *
-          Math.cos((conditions.windDirection * Math.PI) / 180);
-        particle.y +=
-          ((particle.speed * conditions.windSpeed) / 15) *
-          Math.sin((conditions.windDirection * Math.PI) / 180);
+      // Update and draw wind streams
+      const windAngle = (conditions.windDirection * Math.PI) / 180;
+      const windSpeedFactor = conditions.windSpeed / 15;
 
-        if (particle.x < 0) particle.x = canvas.width;
-        if (particle.x > canvas.width) particle.x = 0;
-        if (particle.y < 0) particle.y = canvas.height;
-        if (particle.y > canvas.height) particle.y = 0;
+      streams.forEach((stream) => {
+        // Update stream points
+        for (let i = 0; i < stream.points.length; i++) {
+          stream.points[i].x +=
+            stream.speed *
+            windSpeedFactor *
+            Math.cos(windAngle) *
+            (deltaTime / 16);
 
+          // Add a slight vertical movement based on wind direction
+          stream.points[i].y +=
+            stream.speed *
+            windSpeedFactor *
+            Math.sin(windAngle) *
+            0.3 *
+            (deltaTime / 16);
+
+          // Add some natural waviness
+          stream.points[i].y +=
+            Math.sin(time / 1000 + i) * 0.2 * (deltaTime / 16);
+
+          // Reset if off screen
+          if (stream.points[i].x > canvas.width) {
+            stream.points[i].x = 0;
+            stream.points[i].y = Math.random() * canvas.height * 0.7;
+          }
+          if (stream.points[i].x < 0) {
+            stream.points[i].x = canvas.width;
+            stream.points[i].y = Math.random() * canvas.height * 0.7;
+          }
+          if (stream.points[i].y > canvas.height * 0.8) {
+            stream.points[i].y = canvas.height * 0.8;
+          }
+          if (stream.points[i].y < 0) {
+            stream.points[i].y = 0;
+          }
+        }
+
+        // Draw stream as a smooth curve
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(stream.points[0].x, stream.points[0].y);
+
+        for (let i = 1; i < stream.points.length - 2; i++) {
+          const xc = (stream.points[i].x + stream.points[i + 1].x) / 2;
+          const yc = (stream.points[i].y + stream.points[i + 1].y) / 2;
+          ctx.quadraticCurveTo(stream.points[i].x, stream.points[i].y, xc, yc);
+        }
+
+        // Handle the last two points
+        if (stream.points.length > 2) {
+          const lastIndex = stream.points.length - 1;
+          ctx.quadraticCurveTo(
+            stream.points[lastIndex - 1].x,
+            stream.points[lastIndex - 1].y,
+            stream.points[lastIndex].x,
+            stream.points[lastIndex].y
+          );
+        }
+
+        ctx.strokeStyle = `rgba(255, 255, 255, ${
+          stream.opacity * (windSpeedFactor / 2 + 0.5)
+        })`;
+        ctx.lineWidth = stream.width * (windSpeedFactor / 2 + 0.5);
+        ctx.stroke();
+      });
+
+      // Update and draw leaves
+      leaves.forEach((leaf) => {
+        // Update leaf position
+        leaf.x +=
+          leaf.speed * windSpeedFactor * Math.cos(windAngle) * (deltaTime / 16);
+        leaf.y +=
+          (leaf.speed * 0.5 * windSpeedFactor * Math.sin(windAngle) + 0.2) *
+          (deltaTime / 16); // Slight downward drift
+
+        // Add some natural waviness
+        leaf.y += Math.sin(time / 1000 + leaf.x) * 0.3 * (deltaTime / 16);
+
+        // Update rotation
+        leaf.rotation +=
+          leaf.rotationSpeed * windSpeedFactor * (deltaTime / 16);
+
+        // Reset if off screen
+        if (leaf.x > canvas.width + leaf.size) {
+          leaf.x = -leaf.size;
+          leaf.y = Math.random() * canvas.height * 0.7;
+        }
+        if (leaf.x < -leaf.size) {
+          leaf.x = canvas.width + leaf.size;
+          leaf.y = Math.random() * canvas.height * 0.7;
+        }
+        if (leaf.y > canvas.height * 0.8) {
+          leaf.y = Math.random() * canvas.height * 0.5;
+          leaf.x = Math.random() * canvas.width;
+        }
+
+        // Draw leaf
+        ctx.save();
+        ctx.translate(leaf.x, leaf.y);
+        ctx.rotate(leaf.rotation);
+        ctx.fillStyle = leaf.color;
+
+        // Different leaf shapes
+        if (leaf.type === 0) {
+          // Oval leaf
+          ctx.beginPath();
+          ctx.ellipse(0, 0, leaf.size, leaf.size * 0.6, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Leaf vein
+          ctx.beginPath();
+          ctx.moveTo(0, -leaf.size * 0.6);
+          ctx.lineTo(0, leaf.size * 0.6);
+          ctx.strokeStyle = `rgba(0, 0, 0, 0.2)`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        } else if (leaf.type === 1) {
+          // Heart-shaped leaf
+          const s = leaf.size * 0.8;
+          ctx.beginPath();
+          ctx.moveTo(0, s * 0.3);
+          ctx.bezierCurveTo(s * 0.8, -s * 0.7, s * 1.5, 0, 0, s);
+          ctx.bezierCurveTo(-s * 1.5, 0, -s * 0.8, -s * 0.7, 0, s * 0.3);
+          ctx.fill();
+        } else {
+          // Simple pointed leaf
+          ctx.beginPath();
+          ctx.moveTo(0, -leaf.size * 0.8);
+          ctx.quadraticCurveTo(leaf.size * 0.8, 0, 0, leaf.size * 0.8);
+          ctx.quadraticCurveTo(-leaf.size * 0.8, 0, 0, -leaf.size * 0.8);
+          ctx.fill();
+
+          // Leaf vein
+          ctx.beginPath();
+          ctx.moveTo(0, -leaf.size * 0.8);
+          ctx.lineTo(0, leaf.size * 0.8);
+          ctx.strokeStyle = `rgba(0, 0, 0, 0.2)`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+
+        ctx.restore();
       });
 
       // Draw wind turbines
@@ -179,16 +361,16 @@ export default function WindSection({
           <div className="flex items-center">
             <Wind className="h-5 w-5 text-sky-500 mr-2" />
             <CardTitle className="text-sky-700">
-              Simulação de Energia Eólica
+              Wind Energy Simulation
             </CardTitle>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-sm">
-              <span className="font-medium text-sky-700">Saída:</span>{" "}
+              <span className="font-medium text-sky-700">Output:</span>{" "}
               <span className="text-sky-600">{energyOutput}%</span>
             </div>
             <div className="text-sm">
-              <span className="font-medium text-sky-700">Eficiência:</span>{" "}
+              <span className="font-medium text-sky-700">Efficiency:</span>{" "}
               <span className="text-sky-600">{efficiency}%</span>
             </div>
           </div>
