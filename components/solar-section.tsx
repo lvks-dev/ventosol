@@ -157,6 +157,24 @@ export default function SolarSection({
           Math.PI * 2
         );
         ctx.fill();
+
+        // update
+        // ctx.beginPath();
+        // ctx.arc(cloud.x, cloud.y, 60, Math.PI * 0.5, Math.PI * 1.5);
+        // ctx.arc(cloud.x + 70, cloud.y - 60, 70, Math.PI * 1, Math.PI * 1.85);
+        // ctx.arc(
+        //   cloud.x + 152,
+        //   cloud.y - 45,
+        //   50,
+        //   Math.PI * 1.37,
+        //   Math.PI * 1.91
+        // );
+        // ctx.arc(cloud.x + 200, cloud.y, 60, Math.PI * 1.5, Math.PI * 0.5);
+        // ctx.moveTo(cloud.x + 200, cloud.y + 60);
+        // ctx.lineTo(cloud.x, cloud.y + 60);
+        // ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        // ctx.stroke();
+        // ctx.fill();
       });
 
       // Draw solar panels
