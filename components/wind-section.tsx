@@ -361,16 +361,16 @@ export default function WindSection({
           <div className="flex items-center">
             <Wind className="h-5 w-5 text-sky-500 mr-2" />
             <CardTitle className="text-sky-700">
-              Wind Energy Simulation
+              Simulação de Energia Eólica
             </CardTitle>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-sm">
-              <span className="font-medium text-sky-700">Output:</span>{" "}
+              <span className="font-medium text-sky-700">Saída:</span>{" "}
               <span className="text-sky-600">{energyOutput}%</span>
             </div>
             <div className="text-sm">
-              <span className="font-medium text-sky-700">Efficiency:</span>{" "}
+              <span className="font-medium text-sky-700">Eficiência:</span>{" "}
               <span className="text-sky-600">{efficiency}%</span>
             </div>
           </div>
