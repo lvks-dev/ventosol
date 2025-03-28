@@ -1,0 +1,27 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- Sol -->
+    <circle cx="150" cy="50" r="30" fill="yellow" stroke="orange" stroke-width="4"/>
+    
+    <!-- Raios do Sol -->
+    <g stroke="orange" stroke-width="4">
+        <line x1="150" y1="10" x2="150" y2="30"/>
+        <line x1="150" y1="70" x2="150" y2="90"/>
+        <line x1="110" y1="50" x2="130" y2="50"/>
+        <line x1="170" y1="50" x2="190" y2="50"/>
+        <line x1="125" y1="25" x2="135" y2="35"/>
+        <line x1="165" y1="25" x2="155" y2="35"/>
+        <line x1="125" y1="75" x2="135" y2="65"/>
+        <line x1="165" y1="75" x2="155" y2="65"/>
+    </g>
+    
+    <!-- Hélice do vento -->
+    <g fill="lightblue" stroke="green" stroke-width="3">
+        <path d="M100,100 L130,70 A30,30 0 0,1 160,100 Z"/>
+        <path d="M100,100 L130,130 A30,30 0 0,1 100,160 Z"/>
+        <path d="M100,100 L70,130 A30,30 0 0,1 40,100 Z"/>
+        <path d="M100,100 L70,70 A30,30 0 0,1 100,40 Z"/>
+    </g>
+    
+    <!-- Haste da turbina -->
+    <rect x="95" y="100" width="10" height="60" fill="green"/>
+</svg>

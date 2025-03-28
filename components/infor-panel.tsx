@@ -1,14 +1,18 @@
 import { Wind, Sun, Info, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Image from "next/image";
+import logo from "../public/logo.svg";
 
 export default function InfoSection() {
   return (
     <section className="mb-8">
-      <div className="text-center mb-6">
+      <div className="flex justify-center items-center text-center mb-6">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-sky-500 via-green-600 to-yellow-500 bg-clip-text text-transparent">
           VentoSol
         </h1>
+
+        <Image className="flex h-20 w-20 ml-2" src={logo} alt="VentoSol" />
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
