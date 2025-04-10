@@ -5,6 +5,7 @@ import WindSection from "@/components/wind-section";
 import SolarSection from "@/components/solar-section";
 import ControlPanel from "@/components/control-panel";
 import InfoSection from "@/components/infor-panel";
+import LocationAnalyzer from "@/components/location-analyzer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export type WeatherConditions = {
@@ -67,6 +68,8 @@ export default function Dashboard() {
           <SolarSection conditions={conditions} fullWidth />
         </TabsContent>
       </Tabs>
+
+      <LocationAnalyzer />
     </div>
   );
 }
