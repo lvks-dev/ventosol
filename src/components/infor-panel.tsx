@@ -2,8 +2,7 @@ import { Wind, Sun, Info, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
-import logo from "../public/logo.svg";
-import ventosol from "../public/ventosol.jpg";
+import ventosol from "../../public/ventosol.jpg";
 
 export default function InfoSection() {
   return (
