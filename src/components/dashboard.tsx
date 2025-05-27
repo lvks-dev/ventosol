@@ -7,6 +7,7 @@ import ControlPanel from "@/components/control-panel";
 import InfoSection from "@/components/infor-panel";
 import LocationAnalyzer from "@/components/location-analyzer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import EnergyEstimator from "./energy-estimator";
 
 export type WeatherConditions = {
   windSpeed: number;
@@ -69,7 +70,9 @@ export default function Dashboard() {
         </TabsContent>
       </Tabs>
 
-      <LocationAnalyzer />
+      {/* <LocationAnalyzer /> */}
+
+      <EnergyEstimator />
     </div>
   );
 }
