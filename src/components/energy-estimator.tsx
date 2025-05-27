@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import dynamic from "next/dynamic";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,19 +18,14 @@ import L from "leaflet";
 const defaultPosition = [-19.8157, -43.9542]; // Belo Horizonte, MG
 const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || "";
 
-function LocationMarker({
-  onSelect,
-}: {
-  onSelect: (lat: number, lon: number) => void;
-}) {
-  useMapEvents({
-    click(e) {
-      const { lat, lng } = e.latlng;
-      onSelect(lat, lng);
-    },
-  });
-  return null;
-}
+const LeafletMap = dynamic(() => import("@/components/leaflet"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[400px] w-full flex items-center justify-center bg-gray-100 rounded-md">
+      <div className="animate-pulse text-gray-500">Loading map...</div>
+    </div>
+  ),
+});
 
 export default function EnergyComparison() {
   const [latitude, setLatitude] = useState(defaultPosition[0]);
@@ -43,16 +38,6 @@ export default function EnergyComparison() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [locationLabel, setLocationLabel] = useState("");
-
-  useEffect(() => {
-    // This is needed to fix the marker icon issues with webpack
-    delete (L.Icon.Default.prototype as any)._getIconUrl;
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: "/marker-icon-2x.png",
-      iconUrl: "/marker-icon.png",
-      shadowUrl: "/marker-shadow.png",
-    });
-  }, []);
 
   useEffect(() => {
     const fetchClimateData = async () => {
@@ -185,22 +170,13 @@ export default function EnergyComparison() {
           </div>
         </div>
 
-        <MapContainer
-          center={[latitude, longitude]}
-          zoom={10}
-          style={{ height: "300px" }}
-          className="rounded-xl overflow-hidden"
-        >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <Marker position={[latitude, longitude]} />
-          <LocationMarker
-            onSelect={(lat, lon) => {
-              setLatitude(lat);
-              setLongitude(lon);
-              setLocationLabel("");
-            }}
-          />
-        </MapContainer>
+        <LeafletMap
+          latitude={latitude}
+          longitude={longitude}
+          setLatitude={setLatitude}
+          setLongitude={setLongitude}
+          setLocationLabel={setLocationLabel}
+        />
 
         {loading ? (
           <div className="flex justify-center items-center mt-6 min-h-40">
