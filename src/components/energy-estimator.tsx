@@ -27,6 +27,43 @@ const LeafletMap = dynamic(() => import("@/components/leaflet"), {
   ),
 });
 
+function dynamicSolarEfficiency(uvIndex: number | null): number {
+  if (!uvIndex) return 0;
+  if (uvIndex > 10) return 0.21;
+  if (uvIndex > 7) return 0.19;
+  if (uvIndex > 4) return 0.17;
+  return 0.15;
+}
+
+function dynamicWindEfficiency(windSpeed: number | null): number {
+  if (!windSpeed) return 0;
+  if (windSpeed > 10) return 0.45;
+  if (windSpeed > 6) return 0.4;
+  if (windSpeed > 3) return 0.35;
+  return 0.2;
+}
+
+function calculateSolarKWh(uvIndex: number | null, area: number): number {
+  const eff = dynamicSolarEfficiency(uvIndex);
+  return uvIndex ? uvIndex * area * eff * 30 : 0;
+}
+
+function calculateWindKWh(windSpeed: number | null, radius: number): number {
+  const eff = dynamicWindEfficiency(windSpeed);
+  return windSpeed
+    ? (0.5 *
+        1.225 *
+        Math.PI *
+        Math.pow(radius, 2) *
+        Math.pow(windSpeed, 3) *
+        eff *
+        3600 *
+        24 *
+        30) /
+        1000000
+    : 0;
+}
+
 export default function EnergyComparison() {
   const [latitude, setLatitude] = useState(defaultPosition[0]);
   const [longitude, setLongitude] = useState(defaultPosition[1]);
@@ -38,6 +75,10 @@ export default function EnergyComparison() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [locationLabel, setLocationLabel] = useState("");
+  const [consumption, setConsumption] = useState(150); // kWh, valor fixo para simplificação
+  const [costKWh, setCostKWh] = useState(0.75); // kWh, valor fixo para simplificação
+  const [costSolar, setCostSolar] = useState(20000); // R$, valor fixo para simplificação
+  const [costWind, setCostWind] = useState(25000); // R$, valor fixo para simplificação
 
   useEffect(() => {
     const fetchClimateData = async () => {
@@ -87,22 +128,23 @@ export default function EnergyComparison() {
     }
   };
 
-  const solarKWh = uvIndex ? uvIndex * area * 0.18 * 30 : 0;
-  const windKWh = windSpeed
-    ? (0.5 *
-        1.225 *
-        Math.PI *
-        Math.pow(radius, 2) *
-        Math.pow(windSpeed, 3) *
-        0.4 *
-        3600 *
-        24 *
-        30) /
-      1000000
-    : 0;
+  // const solarKWhPrice = 0.25;
+  // const windKWhPrice = 0.5;
 
-  const economySolar = solarKWh * 0.75;
-  const economyWind = windKWh * 0.75;
+  const solarKWh = calculateSolarKWh(uvIndex, area);
+  const windKWh = calculateWindKWh(windSpeed, radius);
+
+  const economySolar = solarKWh * costKWh;
+  const economyWind = windKWh * costKWh;
+
+  // const valueGeneratedSolar = solarKWh * solarKWhPrice;
+  // const valueGeneratedWind = windKWh * windKWhPrice;
+
+  const monthlyCost = consumption * costKWh;
+  const paybackSolar = solarKWh > 0 ? costSolar / economySolar : null;
+  const paybackWind = windKWh > 0 ? costWind / economyWind : null;
+  const coverageSolar = Math.min(100, (solarKWh / consumption) * 100);
+  const coverageWind = Math.min(100, (windKWh / consumption) * 100);
 
   return (
     <TooltipProvider>
@@ -168,6 +210,58 @@ export default function EnergyComparison() {
               onChange={(e) => setRadius(Number(e.target.value))}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="consumption"
+              className="text-green-800 font-semibold"
+            >
+              Consumo mensal (kWh):
+            </Label>
+            <Input
+              id="consumption"
+              type="number"
+              min="0"
+              value={consumption}
+              onChange={(e) => setConsumption(Number(e.target.value))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="costKWh" className="text-green-800 font-semibold">
+              Custo por kWh (R$):
+            </Label>
+            <Input
+              id="costKWh"
+              type="number"
+              min="0"
+              value={costKWh}
+              onChange={(e) => setCostKWh(Number(e.target.value))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="costKWh" className="text-green-800 font-semibold">
+              Custo de instalação solar (R$):
+            </Label>
+            <Input
+              id="costKWh"
+              type="number"
+              min="0"
+              value={costSolar}
+              onChange={(e) => setCostSolar(Number(e.target.value))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="costKWh" className="text-green-800 font-semibold">
+              Custo de instalação eólica (R$):
+            </Label>
+            <Input
+              id="costKWh"
+              type="number"
+              min="0"
+              value={costWind}
+              onChange={(e) => setCostWind(Number(e.target.value))}
+            />
+          </div>
         </div>
 
         <LeafletMap
@@ -202,13 +296,30 @@ export default function EnergyComparison() {
                 Irradiação estimada (UVI): {uvIndex ?? "N/D"}
               </p>
               <p className="text-sm text-gray-600">Área: {area} m²</p>
-              <p className="text-sm text-gray-600">Eficiência: 18%</p>
+              <p className="text-sm text-gray-600">
+                Eficiência: {dynamicSolarEfficiency(uvIndex) * 100}%
+              </p>
+              <p className="text-sm text-gray-600">
+                Gasto mensal atual: R$ {monthlyCost.toFixed(2)}
+              </p>
               <p className="font-medium">
                 Energia estimada mensal: {solarKWh.toFixed(1)} kWh
               </p>
               <p className="font-medium text-green-600">
                 Economia estimada: R$ {economySolar.toFixed(2)}
               </p>
+              <p className="text-sm text-gray-600">
+                Custo estimado da instalação: R$ {costSolar.toFixed(2)}
+              </p>
+              {paybackSolar !== null ? (
+                <p className="text-sm text-gray-600">
+                  Retorno estimado: {paybackSolar.toFixed(1)} meses
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500 italic">
+                  Geração insuficiente para calcular o retorno
+                </p>
+              )}
             </div>
             <div className="p-4 border rounded-xl shadow bg-white">
               <div className="flex items-center justify-between mb-2">
@@ -231,7 +342,10 @@ export default function EnergyComparison() {
                 Raio da hélice: {radius} m
               </p>
               <p className="text-sm text-gray-600">
-                Eficiência da turbina: 40%
+                Eficiência da turbina: {dynamicWindEfficiency(windSpeed) * 100}%
+              </p>
+              <p className="text-sm text-gray-600">
+                Gasto mensal atual: R$ {monthlyCost.toFixed(2)}
               </p>
               <p className="font-medium">
                 Energia estimada mensal: {windKWh.toFixed(1)} kWh
@@ -239,9 +353,53 @@ export default function EnergyComparison() {
               <p className="font-medium text-green-600">
                 Economia estimada: R$ {economyWind.toFixed(2)}
               </p>
+              <p className="text-sm text-gray-600">
+                Custo estimado da instalação: R$ {costWind.toFixed(2)}
+              </p>
+              {paybackWind !== null ? (
+                <p className="text-sm text-gray-600">
+                  Retorno estimado: {paybackWind.toFixed(1)} meses
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500 italic">
+                  Geração insuficiente para calcular o retorno
+                </p>
+              )}
             </div>
           </div>
         )}
+      </div>
+      <div className="mt-10 p-6 border rounded-xl shadow bg-gray-50">
+        <h3 className="text-2xl font-bold text-green-800 mb-4">
+          📊 Resumo da Situação Atual
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-700">
+          <div>
+            <p>
+              <strong>Consumo mensal informado:</strong> {consumption} kWh
+            </p>
+            <p>
+              <strong>Custo por kWh:</strong> R$ {costKWh.toFixed(2)}
+            </p>
+            <p>
+              <strong>Custo atual mensal:</strong> R$ {monthlyCost.toFixed(2)}
+            </p>
+          </div>
+          <div>
+            <p>
+              <strong>Economia com solar:</strong> R$ {economySolar.toFixed(2)}
+            </p>
+            <p>
+              <strong>Economia com eólica:</strong> R$ {economyWind.toFixed(2)}
+            </p>
+            <p>
+              <strong>% de cobertura solar:</strong> {coverageSolar.toFixed(1)}%
+            </p>
+            <p>
+              <strong>% de cobertura eólica:</strong> {coverageWind.toFixed(1)}%
+            </p>
+          </div>
+        </div>
       </div>
     </TooltipProvider>
   );
